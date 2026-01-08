@@ -963,3 +963,11 @@ html, body {
         max-width: 65%;
     }
   }
+/* Мобильные исправления */
+@media (max-width: 768px) {
+    /* Кнопки для мобильных */
+    .btn-primary, .btn-google, .btn-success {
+        min-height: 50px !important;
+        font-size: 16px !important; /* Увеличенный размер для мобильных */
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: rgba(255,
