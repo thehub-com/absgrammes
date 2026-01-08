@@ -1,0 +1,186 @@
+// auth.js - Только авторизация
+console.log('🚀 Auth.js загружен');
+
+const SUPABASE_URL = "https://zdmtwnvaksdbvutrpcnr.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkbXR3bnZha3NkYnZ1dHJwY25yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc1Mjg4NjcsImV4cCI6MjA4MzEwNDg2N30.QztruYbzPeF8CrZmT_FhMw6VHc1-289qqJ8Qs4Z7nVc";
+
+// Инициализация Supabase
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// Функция маршрутизации
+function showScreen(screenName) {
+    console.log('🖥️ Переключение на:', screenName);
+    document.querySelectorAll('.screen').forEach(screen => {
+        screen.classList.remove('active');
+        screen.style.display = 'none';
+    });
+    
+    const screen = document.getElementById(screenName);
+    if (screen) {
+        screen.style.display = 'flex';
+        setTimeout(() => screen.classList.add('active'), 10);
+    }
+}
+
+// Отправка OTP
+async function sendEmailOTP() {
+    const email = document.getElementById('email-input').value.trim();
+    
+    if (!email) {
+        alert('Введите email');
+        return;
+    }
+    
+    try {
+        console.log('📧 Отправка OTP на:', email);
+        
+        const { error } = await supabase.auth.signInWithOtp({
+            email: email,
+            options: {
+                shouldCreateUser: true,
+                emailRedirectTo: 'https://absgram.onrender.com'
+            }
+        });
+        
+        if (error) throw error;
+        
+        // Показываем поле для кода
+        document.querySelector('.otp-group').classList.remove('hidden');
+        document.getElementById('otp-input').focus();
+        
+        alert('✅ Код отправлен! Проверьте email.');
+        
+    } catch (error) {
+        console.error('❌ Ошибка:', error);
+        alert('Ошибка: ' + error.message);
+    }
+}
+
+// Верификация OTP
+async function verifyEmailOTP() {
+    const email = document.getElementById('email-input').value.trim();
+    const token = document.getElementById('otp-input').value.trim();
+    
+    if (!token || token.length !== 6) {
+        alert('Введите 6-значный код');
+        return;
+    }
+    
+    try {
+        const { data, error } = await supabase.auth.verifyOtp({
+            email: email,
+            token: token,
+            type: 'email'
+        });
+        
+        if (error) throw error;
+        
+        alert('✅ Успешный вход!');
+        showScreen('app');
+        
+    } catch (error) {
+        alert('❌ Неверный код');
+    }
+}
+
+// Google OAuth
+async function signInWithGoogle() {
+    try {
+        const { error } = await supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+                redirectTo: 'https://absgram.onrender.com'
+            }
+        });
+        
+        if (error) throw error;
+    } catch (error) {
+        alert('Ошибка Google: ' + error.message);
+    }
+}
+
+// Настройка обработчиков
+function setupAuthHandlers() {
+    console.log('🔧 Настройка обработчиков авторизации');
+    
+    // Кнопка "Получить код"
+    const sendEmailBtn = document.getElementById('send-email-btn');
+    if (sendEmailBtn) {
+        sendEmailBtn.addEventListener('click', sendEmailOTP);
+    }
+    
+    // Кнопка "Google"
+    const googleBtn = document.getElementById('google-auth-btn');
+    if (googleBtn) {
+        googleBtn.addEventListener('click', signInWithGoogle);
+    }
+    
+    // Кнопка "Подтвердить"
+    const verifyBtn = document.getElementById('verify-otp-btn');
+    if (verifyBtn) {
+        verifyBtn.addEventListener('click', verifyEmailOTP);
+    }
+    
+    // Enter в email поле
+    const emailInput = document.getElementById('email-input');
+    if (emailInput) {
+        emailInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendEmailOTP();
+        });
+    }
+    
+    // Enter в OTP поле
+    const otpInput = document.getElementById('otp-input');
+    if (otpInput) {
+        otpInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') verifyEmailOTP();
+        });
+    }
+    
+    console.log('✅ Обработчики настроены');
+}
+
+// Инициализация
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('✅ Auth.js инициализация');
+    setupAuthHandlers();
+    
+    // Автопереход со сплеш-скрина
+    setTimeout(() => {
+        showScreen('auth');
+    }, 2500);
+    
+    // Экспорт функций в глобальную область
+    window.sendEmailOTP = sendEmailOTP;
+    window.verifyEmailOTP = verifyEmailOTP;
+    window.signInWithGoogle = signInWithGoogle;
+    window.showScreen = showScreen;
+    
+    console.log('✅ Auth.js готов');
+});
+
+// Создаем тестовую кнопку
+setTimeout(() => {
+    const testBtn = document.createElement('button');
+    testBtn.textContent = '🔧 Тест функций';
+    testBtn.style.position = 'fixed';
+    testBtn.style.bottom = '10px';
+    testBtn.style.right = '10px';
+    testBtn.style.zIndex = '9999';
+    testBtn.style.padding = '10px';
+    testBtn.style.background = '#4CAF50';
+    testBtn.style.color = 'white';
+    testBtn.style.border = 'none';
+    testBtn.style.borderRadius = '5px';
+    testBtn.style.cursor = 'pointer';
+    
+    testBtn.addEventListener('click', () => {
+        console.log('=== ТЕСТ ФУНКЦИЙ ===');
+        console.log('sendEmailOTP:', typeof sendEmailOTP);
+        console.log('signInWithGoogle:', typeof signInWithGoogle);
+        console.log('showScreen:', typeof showScreen);
+        alert('Функции загружены! Проверьте консоль.');
+    });
+    
+    document.body.appendChild(testBtn);
+}, 1000);
