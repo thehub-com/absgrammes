@@ -1,0 +1,17 @@
+{
+  "name": "absgram",
+  "version": "1.0.0",
+  "description": "Безопасный мессенджер",
+  "main": "index.html",
+  "scripts": {
+    "start": "serve .",
+    "build": "echo 'No build needed for static site'",
+    "deploy": "echo 'Deploy to Render'"
+  },
+  "keywords": ["messenger", "pwa", "supabase"],
+  "author": "Absgram",
+  "license": "MIT",
+  "devDependencies": {
+    "serve": "^14.0.0"
+  }
+}
