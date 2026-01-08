@@ -369,5 +369,56 @@
             console.log('- window.showScreen("chat-window")');
         });
     </script>
+    <!-- После всех скриптов добавьте это -->
+<script>
+    // Принудительная перезагрузка обработчиков для мобильных
+    setTimeout(function() {
+        console.log('📱 Принудительная инициализация для мобильных');
+        
+        // Создаем прямые обработчики
+        const sendBtn = document.getElementById('send-email-btn');
+        const googleBtn = document.getElementById('google-auth-btn');
+        
+        if (sendBtn) {
+            sendBtn.onclick = function() {
+                console.log('📱 Прямой onclick для Получить код');
+                if (window.mobileSendEmailOTP) {
+                    window.mobileSendEmailOTP();
+                } else {
+                    alert('Мобильные функции не загружены. Обновите страницу.');
+                }
+            };
+        }
+        
+        if (googleBtn) {
+            googleBtn.onclick = function() {
+                console.log('📱 Прямой onclick для Google');
+                if (window.mobileGoogleAuth) {
+                    window.mobileGoogleAuth();
+                }
+            };
+        }
+        
+        // Создаем тестовую область
+        const testDiv = document.createElement('div');
+        testDiv.innerHTML = `
+            <div style="position: fixed; bottom: 10px; left: 10px; background: rgba(0,0,0,0.8); color: white; padding: 10px; border-radius: 10px; z-index: 9999;">
+                <p style="margin: 0; font-size: 12px;">📱 Absgram Mobile</p>
+                <button onclick="testClick()" style="background: #FF9800; border: none; padding: 5px 10px; border-radius: 5px; color: white; margin-top: 5px; width: 100%;">
+                    Тест клика
+                </button>
+            </div>
+        `;
+        document.body.appendChild(testDiv);
+        
+        window.testClick = function() {
+            alert('✅ Клик работает! Теперь попробуйте основные кнопки.');
+        };
+        
+    }, 2000); // Ждём 2 секунды после загрузки
+</script>
+
+<!-- Подключите mobile-fix.js -->
+<script src="mobile-fix.js"></script>
 </body>
                 </html>
