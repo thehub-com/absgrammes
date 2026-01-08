@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Absgram - Безопасный мессенджер</title>
+    
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#FF9800">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Самолётик SVG (встроенный) -->
+    <svg style="display: none;">
+        <symbol id="plane-icon" viewBox="0 0 100 100">
+            <path d="M30,50 L70,50 L65,40 L35,40 Z" fill="#FF9800" stroke="#FFF" stroke-width="1.5"/>
+            <path d="M50,35 L60,50 L40,50 Z" fill="#FF9800" stroke="#FFF" stroke-width="1.5"/>
+            <path d="M35,45 L30,55 L40,55 Z" fill="#FF9800" stroke="#FFF" stroke-width="1"/>
+        </symbol>
+    </svg>
+</head>
+<body>
+    <!-- SPLASH SCREEN -->
+    <div id="splash" class="screen active">
+        <div class="splash-content">
+            <!-- Анимация самолётика -->
+            <div class="plane-animation">
+                <svg class="paper-plane">
+                    <use href="#plane-icon"></use>
+                </svg>
+            </div>
+            
+            <!-- Название -->
+            <div class="abs-title">
+                <h1>ABS</h1>
+                <p class="company">company</p>
+            </div>
+            
+            <!-- Подпись -->
+            <div class="splash-footer">
+                <p class="safety-text">Безопасный мессенджер</p>
+                <a href="http://supportabs.tilda.ws/" class="error-link" target="_blank">
+                    Нашли ошибку? Напишите нам
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- AUTH SCREEN -->
+    <div id="auth" class="screen">
+        <div class="auth-container">
+            <!-- Логотип -->
+            <div class="auth-logo">
+                <svg class="auth-plane">
+                    <use href="#plane-icon"></use>
+                </svg>
+                <h1>ABSGRAM</h1>
+                <p class="auth-tagline">Безопасный мессенджер</p>
+            </div>
+
+            <!-- Форма -->
+            <div class="auth-form">
+                <h2>Вход / Регистрация</h2>
+                
+                <!-- Email -->
+                <div class="input-group">
+                    <input type="email" id="email-input" placeholder="Ваш email" required>
+                    <button id="send-email-btn" class="btn-primary">
+                        Получить код
+                    </button>
+                </div>
+
+                <!-- OTP -->
+                <div class="otp-group hidden">
+                    <input type="text" id="otp-input" placeholder="6-значный код" maxlength="6" inputmode="numeric">
+                    <button id="verify-otp-btn" class="btn-success">
+                        Подтвердить
+                    </button>
+                </div>
+
+                <!-- Google -->
+                <div class="divider">
+                    <span>или</span>
+                </div>
+                <button id="google-auth-btn" class="btn-google">
+                    <span class="google-icon">G</span>
+                    Войти через Google
+                </button>
+
+                <!-- Инфо -->
+                <div class="auth-info">
+                    <p>Регистрируясь, вы соглашаетесь с условиями</p>
+                </div>
+            </div>
+
+            <!-- Футер -->
+            <div class="auth-footer">
+                <a href="http://supportabs.tilda.ws/" class="error-link" target="_blank">
+                    Нашли ошибку? Напишите нам
+                </a>
+                <p class="copyright">© 2024 Absgram</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN APP -->
+    <div id="app" class="screen">
+        <!-- Header -->
+        <header class="app-header">
+            <!-- User info -->
+            <div class="user-section">
+                <div class="user-avatar" id="user-avatar">U</div>
+                <div class="user-details">
+                    <h2 id="username">User</h2>
+                    <p class="user-status" id="user-status">online</p>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="header-actions">
+                <button class="icon-btn" id="search-btn" title="Поиск">
+                    <svg width="20" height="20" viewBox="0 0 24 24">
+                        <path fill="currentColor" d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                    </svg>
+                </button>
+                <button class="icon-btn" id="new-chat-btn" title="Новый чат">
+                    <svg width="20" height="20" viewBox="0 0 24 24">
+                        <path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                    </svg>
+                </button>
+                <button class="icon-btn" id="menu-btn" title="Меню">
+                    <svg width="20" height="20" viewBox="0 0 24 24">
+                        <path fill="currentColor" d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- Search -->
+        <div id="search-panel" class="hidden">
+            <div class="search-box">
+                <input type="text" id="search-input" placeholder="Поиск по нику..." autocomplete="off">
+                <button id="clear-search-btn" class="icon-btn">✕</button>
+            </div>
+            <div class="search-results" id="search-results"></div>
+        </div>
+
+        <!-- Main Content -->
+        <main class="app-main">
+            <!-- Chats List -->
+            <section class="chats-section">
+                <div class="section-header">
+                    <h3>Чаты</h3>
+                    <span class="badge" id="chats-count">0</span>
+                </div>
+                <div class="chats-list" id="chats-list">
+                    <div class="empty-state">
+                        <div class="empty-icon">💬</div>
+                        <p>Нет активных чатов</p>
+                        <p class="hint">Найдите пользователя чтобы начать общение</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Online Users -->
+            <section class="online-section">
+                <div class="section-header">
+                    <h3>Онлайн сейчас</h3>
+                </div>
+                <div class="online-list" id="online-list">
+                    <div class="empty-state small">
+                        <p>Никого нет онлайн</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav">
+            <button class="nav-btn active" data-page="chats">
+                <svg width="24" height="24" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/>
+                </svg>
+                <span>Чаты</span>
+            </button>
+            <button class="nav-btn" data-page="contacts">
+                <svg width="24" height="24" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                </svg>
+                <span>Контакты</span>
+            </button>
+            <button class="nav-btn" data-page="profile">
+                <svg width="24" height="24" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
+                </svg>
+                <span>Профиль</span>
+            </button>
+        </nav>
+
+        <!-- Chat Window -->
+        <div id="chat-window" class="screen">
+            <!-- Chat Header -->
+            <header class="chat-header">
+                <button class="back-btn" id="chat-back-btn">
+                    <svg width="24" height="24" viewBox="0 0 24 24">
+                        <path fill="currentColor" d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+                    </svg>
+                </button>
+                
+                <div class="chat-user-info">
+                    <div class="chat-avatar" id="chat-avatar">U</div>
+                    <div>
+                        <h4 id="chat-name">Имя</h4>
+                        <p class="chat-status" id="chat-status">online</p>
+                    </div>
+                </div>
+                
+                <div class="chat-actions">
+                    <button class="icon-btn" id="chat-info-btn">
+                        <svg width="20" height="20" viewBox="0 0 24 24">
+                            <path fill="currentColor" d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
+                        </svg>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Messages -->
+            <div class="messages-container" id="messages-container">
+                <div class="empty-chat">
+                    <p>Начните диалог!</p>
+                </div>
+            </div>
+
+            <!-- Message Input -->
+            <div class="message-input-container">
+                <input type="text" id="message-input" placeholder="Введите сообщение..." maxlength="2000">
+                <button id="send-btn" class="send-btn" disabled>
+                    <svg width="24" height="24" viewBox="0 0 24 24">
+                        <path fill="currentColor" d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Modals -->
+        <div id="edit-profile-modal" class="modal hidden">
+            <div class="modal-content">
+                <h3>Редактировать профиль</h3>
+                <input type="text" id="edit-username" placeholder="Ваш ник" maxlength="20">
+                <div class="username-status" id="username-status"></div>
+                <input type="text" id="edit-status" placeholder="Статус" maxlength="100">
+                <div class="modal-actions">
+                    <button class="btn-secondary" id="cancel-edit-btn">Отмена</button>
+                    <button class="btn-primary" id="save-profile-btn">Сохранить</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="create-group-modal" class="modal hidden">
+            <div class="modal-content">
+                <h3>Создать группу</h3>
+                <input type="text" id="group-name-input" placeholder="Название группы" maxlength="50">
+                <div class="modal-actions">
+                    <button class="btn-secondary" id="cancel-group-btn">Отмена</button>
+                    <button class="btn-primary" id="create-group-btn">Создать</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <script src="app.js"></script>
+    <script src="security.js"></script>
+    
+    <!-- Splash screen auto-hide -->
+    <script>
+        setTimeout(() => {
+            const splash = document.getElementById('splash');
+            if (splash && splash.classList.contains('active')) {
+                splash.classList.remove('active');
+                setTimeout(() => {
+                    splash.style.display = 'none';
+                    document.getElementById('auth').classList.add('active');
+                }, 300);
+            }
+        }, 2500);
+    </script>
+</body>
+</html>
