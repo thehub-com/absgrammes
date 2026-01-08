@@ -22,17 +22,51 @@
             <path d="M35,45 L30,55 L40,55 Z" fill="#FF9800" stroke="#FFF" stroke-width="1"/>
         </symbol>
     </svg>
+    
+    <style>
+        /* Анимация самолётика */
+        @keyframes planeFly {
+            0% {
+                transform: translateX(-150px) translateY(50px) rotate(-20deg);
+                opacity: 0;
+            }
+            30% {
+                transform: translateX(0) translateY(0) rotate(0);
+                opacity: 1;
+            }
+            70% {
+                transform: translateX(0) translateY(0) rotate(0);
+                opacity: 1;
+            }
+            100% {
+                transform: translateX(150px) translateY(-50px) rotate(20deg);
+                opacity: 0;
+            }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .paper-plane {
+            animation: planeFly 2s ease-in-out;
+        }
+        
+        .abs-title {
+            animation: fadeIn 0.5s ease 2s forwards;
+            opacity: 0;
+        }
+    </style>
 </head>
 <body>
     <!-- SPLASH SCREEN -->
     <div id="splash" class="screen active">
         <div class="splash-content">
-            <!-- Анимация самолётика -->
-            <div class="plane-animation">
-                <svg class="paper-plane">
-                    <use href="#plane-icon"></use>
-                </svg>
-            </div>
+            <!-- Оранжевый бумажный самолётик -->
+            <svg class="paper-plane" width="100" height="100">
+                <use href="#plane-icon"></use>
+            </svg>
             
             <!-- Название -->
             <div class="abs-title">
@@ -55,7 +89,7 @@
         <div class="auth-container">
             <!-- Логотип -->
             <div class="auth-logo">
-                <svg class="auth-plane">
+                <svg class="auth-plane" width="50" height="50">
                     <use href="#plane-icon"></use>
                 </svg>
                 <h1>ABSGRAM</h1>
@@ -102,7 +136,7 @@
                 <a href="http://supportabs.tilda.ws/" class="error-link" target="_blank">
                     Нашли ошибку? Напишите нам
                 </a>
-                <p class="copyright">© 2024 Absgram</p>
+                <p class="copyright">© 2026 Absgram</p>
             </div>
         </div>
     </div>
@@ -200,74 +234,74 @@
                 <span>Профиль</span>
             </button>
         </nav>
+    </div>
 
-        <!-- Chat Window -->
-        <div id="chat-window" class="screen">
-            <!-- Chat Header -->
-            <header class="chat-header">
-                <button class="back-btn" id="chat-back-btn">
-                    <svg width="24" height="24" viewBox="0 0 24 24">
-                        <path fill="currentColor" d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
-                    </svg>
-                </button>
-                
-                <div class="chat-user-info">
-                    <div class="chat-avatar" id="chat-avatar">U</div>
-                    <div>
-                        <h4 id="chat-name">Имя</h4>
-                        <p class="chat-status" id="chat-status">online</p>
-                    </div>
-                </div>
-                
-                <div class="chat-actions">
-                    <button class="icon-btn" id="chat-info-btn">
-                        <svg width="20" height="20" viewBox="0 0 24 24">
-                            <path fill="currentColor" d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
-                        </svg>
-                    </button>
-                </div>
-            </header>
-
-            <!-- Messages -->
-            <div class="messages-container" id="messages-container">
-                <div class="empty-chat">
-                    <p>Начните диалог!</p>
+    <!-- Chat Window -->
+    <div id="chat-window" class="screen">
+        <!-- Chat Header -->
+        <header class="chat-header">
+            <button class="back-btn" id="chat-back-btn">
+                <svg width="24" height="24" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+                </svg>
+            </button>
+            
+            <div class="chat-user-info">
+                <div class="chat-avatar" id="chat-avatar">U</div>
+                <div>
+                    <h4 id="chat-name">Имя</h4>
+                    <p class="chat-status" id="chat-status">online</p>
                 </div>
             </div>
-
-            <!-- Message Input -->
-            <div class="message-input-container">
-                <input type="text" id="message-input" placeholder="Введите сообщение..." maxlength="2000">
-                <button id="send-btn" class="send-btn" disabled>
-                    <svg width="24" height="24" viewBox="0 0 24 24">
-                        <path fill="currentColor" d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+            
+            <div class="chat-actions">
+                <button class="icon-btn" id="chat-info-btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24">
+                        <path fill="currentColor" d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
                     </svg>
                 </button>
             </div>
-        </div>
+        </header>
 
-        <!-- Modals -->
-        <div id="edit-profile-modal" class="modal hidden">
-            <div class="modal-content">
-                <h3>Редактировать профиль</h3>
-                <input type="text" id="edit-username" placeholder="Ваш ник" maxlength="20">
-                <div class="username-status" id="username-status"></div>
-                <input type="text" id="edit-status" placeholder="Статус" maxlength="100">
-                <div class="modal-actions">
-                    <button class="btn-secondary" id="cancel-edit-btn">Отмена</button>
-                    <button class="btn-primary" id="save-profile-btn">Сохранить</button>
-                </div>
+        <!-- Messages -->
+        <div class="messages-container" id="messages-container">
+            <div class="empty-chat">
+                <p>Начните диалог!</p>
             </div>
         </div>
 
-        <div id="create-group-modal" class="modal hidden">
-            <div class="modal-content">
-                <h3>Создать группу</h3>
-                <input type="text" id="group-name-input" placeholder="Название группы" maxlength="50">
-                <div class="modal-actions">
-                    <button class="btn-secondary" id="cancel-group-btn">Отмена</button>
-                    <button class="btn-primary" id="create-group-btn">Создать</button>
-                </div>
+        <!-- Message Input -->
+        <div class="message-input-container">
+            <input type="text" id="message-input" placeholder="Введите сообщение..." maxlength="2000">
+            <button id="send-btn" class="send-btn" disabled>
+                <svg width="24" height="24" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="edit-profile-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3>Редактировать профиль</h3>
+            <input type="text" id="edit-username" placeholder="Ваш ник" maxlength="20">
+            <div class="username-status" id="username-status"></div>
+            <input type="text" id="edit-status" placeholder="Статус" maxlength="100">
+            <div class="modal-actions">
+                <button class="btn-secondary" id="cancel-edit-btn">Отмена</button>
+                <button class="btn-primary" id="save-profile-btn">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="create-group-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3>Создать группу</h3>
+            <input type="text" id="group-name-input" placeholder="Название группы" maxlength="50">
+            <div class="modal-actions">
+                <button class="btn-secondary" id="cancel-group-btn">Отмена</button>
+                <button class="btn-primary" id="create-group-btn">Создать</button>
             </div>
         </div>
     </div>
@@ -278,18 +312,62 @@
     <script src="app.js"></script>
     <script src="security.js"></script>
     
-    <!-- Splash screen auto-hide -->
+    <!-- Маршрутизация и переходы -->
     <script>
+        // Глобальные функции для управления экранами
+        window.showScreen = function(screenName) {
+            console.log('🖥️ Переключение на экран:', screenName);
+            
+            // Скрыть все экраны
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
+                screen.style.display = 'none';
+            });
+            
+            // Показать выбранный экран
+            const screenElement = document.getElementById(screenName);
+            if (screenElement) {
+                screenElement.style.display = 'flex';
+                setTimeout(() => {
+                    screenElement.classList.add('active');
+                }, 10);
+            }
+        };
+        
+        // Автоматический переход со сплеш-скрина на авторизацию
         setTimeout(() => {
             const splash = document.getElementById('splash');
             if (splash && splash.classList.contains('active')) {
                 splash.classList.remove('active');
                 setTimeout(() => {
                     splash.style.display = 'none';
-                    document.getElementById('auth').classList.add('active');
-                }, 300);
+                    window.showScreen('auth');
+                }, 500);
             }
         }, 2500);
+        
+        // Обработчики для тестирования (можно удалить позже)
+        document.addEventListener('DOMContentLoaded', function() {
+            // Тест переключения экранов
+            window.testSwitchToApp = function() {
+                window.showScreen('app');
+            };
+            
+            window.testSwitchToChat = function() {
+                window.showScreen('chat-window');
+            };
+            
+            window.testSwitchToAuth = function() {
+                window.showScreen('auth');
+            };
+            
+            console.log('✅ Маршрутизация Absgram загружена');
+            console.log('📱 Доступные функции:');
+            console.log('- window.showScreen("splash")');
+            console.log('- window.showScreen("auth")');
+            console.log('- window.showScreen("app")');
+            console.log('- window.showScreen("chat-window")');
+        });
     </script>
 </body>
-</html>
+                </html>
