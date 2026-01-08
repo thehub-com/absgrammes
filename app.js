@@ -1,4 +1,4 @@
-// app.js - Absgram Messenger
+// app.js - Absgram Messenger (исправленная версия)
 
 // ===== КОНФИГУРАЦИЯ =====
 const CONFIG = {
@@ -9,6 +9,7 @@ const CONFIG = {
     app: {
         name: "Absgram",
         version: "1.0.0",
+        siteUrl: "https://absgram.onrender.com", // ВАЖНО: ваш URL
         colors: {
             primary: "#FF9800",
             primaryDark: "#F57C00",
@@ -188,7 +189,7 @@ async function createOrUpdateProfile() {
     }
 }
 
-// ===== EMAIL OTP =====
+// ===== EMAIL OTP (ИСПРАВЛЕННЫЙ) =====
 async function sendEmailOTP() {
     const email = elements.auth.emailInput.value.trim();
     
@@ -198,30 +199,45 @@ async function sendEmailOTP() {
     }
     
     try {
-        // Сохраняем email для верификации
+        // Кнопка в состояние загрузки
+        elements.auth.sendEmailBtn.disabled = true;
+        elements.auth.sendEmailBtn.textContent = 'Отправка...';
+        
+        // Сохраняем email
         pendingEmail = email;
         localStorage.setItem('pendingEmail', email);
         
-        // Отправляем OTP
+        console.log('📧 Отправка OTP на:', email);
+        
+        // ВАЖНО: Используем правильный redirect URL для Render
         const { error } = await supabase.auth.signInWithOtp({
             email: email,
             options: {
                 shouldCreateUser: true,
-                emailRedirectTo: window.location.origin
+                emailRedirectTo: CONFIG.app.siteUrl // Используем URL из конфига
             }
         });
         
-        if (error) throw error;
+        if (error) {
+            console.error('OTP Error Details:', error);
+            throw error;
+        }
+        
+        console.log('✅ OTP отправлен успешно');
         
         // Показываем поле для кода
         elements.auth.otpGroup.classList.remove('hidden');
         elements.auth.otpInput.focus();
         
-        showSuccess('✅ 6-значный код отправлен на email');
+        showSuccess('✅ 6-значный код отправлен на email! Проверьте папку "Спам" если не видите письмо.');
         
     } catch (error) {
-        console.error('Ошибка OTP:', error);
-        showError('Не удалось отправить код: ' + error.message);
+        console.error('❌ Ошибка OTP:', error);
+        showError(`Ошибка отправки: ${error.message}. Проверьте настройки Supabase.`);
+    } finally {
+        // Восстанавливаем кнопку
+        elements.auth.sendEmailBtn.disabled = false;
+        elements.auth.sendEmailBtn.textContent = 'Получить код';
     }
 }
 
@@ -235,13 +251,23 @@ async function verifyEmailOTP() {
     }
     
     try {
+        elements.auth.verifyOtpBtn.disabled = true;
+        elements.auth.verifyOtpBtn.textContent = 'Проверка...';
+        
+        console.log('🔐 Верификация OTP:', email, 'код:', token);
+        
         const { data, error } = await supabase.auth.verifyOtp({
             email: email,
             token: token,
             type: 'email'
         });
         
-        if (error) throw error;
+        if (error) {
+            console.error('Verify OTP Error:', error);
+            throw error;
+        }
+        
+        console.log('✅ OTP верификация успешна');
         
         // Успешная авторизация
         currentUser = data.user;
@@ -255,24 +281,35 @@ async function verifyEmailOTP() {
         showSuccess('✅ Авторизация успешна!');
         
     } catch (error) {
-        console.error('Ошибка верификации:', error);
+        console.error('❌ Ошибка верификации:', error);
         showError('Неверный код или истёк срок действия');
+    } finally {
+        elements.auth.verifyOtpBtn.disabled = false;
+        elements.auth.verifyOtpBtn.textContent = 'Подтвердить';
     }
 }
 
 async function signInWithGoogle() {
     try {
+        console.log('🔗 Начало Google OAuth');
+        
         const { error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
-                redirectTo: window.location.origin
+                redirectTo: CONFIG.app.siteUrl + '/auth/callback'
             }
         });
         
-        if (error) throw error;
+        if (error) {
+            console.error('Google OAuth error:', error);
+            throw error;
+        }
+        
+        console.log('✅ Google OAuth запущен');
+        
     } catch (error) {
-        console.error('Google OAuth error:', error);
-        showError('Ошибка входа через Google');
+        console.error('❌ Google OAuth error:', error);
+        showError('Ошибка входа через Google: ' + error.message);
     }
 }
 
@@ -288,6 +325,8 @@ async function signOut() {
         // Выход из Supabase
         const { error } = await supabase.auth.signOut();
         if (error) throw error;
+        
+        console.log('👋 Выход пользователя:', currentUser?.email);
         
         // Сброс состояния
         currentUser = null;
@@ -309,6 +348,8 @@ async function signOut() {
 
 // ===== УПРАВЛЕНИЕ ЭКРАНАМИ =====
 function showScreen(screenName) {
+    console.log('🖥️ Переключение экрана:', screenName);
+    
     // Скрыть все экраны
     Object.values(elements.screens).forEach(screen => {
         if (screen) {
@@ -380,6 +421,8 @@ async function searchUsers() {
     }
     
     try {
+        console.log('🔍 Поиск пользователей:', searchTerm);
+        
         const { data: users, error } = await supabase
             .from('profiles')
             .select('id, username, email, status, is_online')
@@ -389,10 +432,11 @@ async function searchUsers() {
         
         if (error) throw error;
         
+        console.log('✅ Найдено пользователей:', users?.length);
         displaySearchResults(users || []);
         
     } catch (error) {
-        console.error('Ошибка поиска:', error);
+        console.error('❌ Ошибка поиска:', error);
         showError('Ошибка поиска пользователей');
     }
 }
@@ -419,10 +463,10 @@ function displaySearchResults(users) {
             <div class="chat-item" data-user-id="${user.id}">
                 <div class="chat-avatar ${onlineClass}">${avatarText}</div>
                 <div class="chat-info">
-                    <h4>${username}</h4>
-                    <p class="chat-preview">${user.email}</p>
+                    <h4>${escapeHtml(username)}</h4>
+                    <p class="chat-preview">${escapeHtml(user.email)}</p>
                 </div>
-                <button class="start-chat-btn" onclick="startChatWithUser('${user.id}', '${username}')">
+                <button class="start-chat-btn" onclick="startChatWithUser('${user.id}', '${escapeHtml(username)}')">
                     💬
                 </button>
             </div>
@@ -446,6 +490,8 @@ async function loadChats() {
     if (!currentUser) return;
     
     try {
+        console.log('💬 Загрузка чатов пользователя:', currentUser.id);
+        
         // Получаем чаты пользователя
         const { data: chatMembers, error } = await supabase
             .from('chat_members')
@@ -458,6 +504,7 @@ async function loadChats() {
         
         if (error) throw error;
         
+        console.log('✅ Загружено чатов:', chatMembers?.length);
         displayChats(chatMembers || []);
         
         // Обновляем счетчик
@@ -466,7 +513,7 @@ async function loadChats() {
         }
         
     } catch (error) {
-        console.error('Ошибка загрузки чатов:', error);
+        console.error('❌ Ошибка загрузки чатов:', error);
     }
 }
 
@@ -494,8 +541,8 @@ function displayChats(chatMembers) {
             <div class="chat-item" onclick="openChat('${chat.id}', '${chat.type || 'personal'}')">
                 <div class="chat-avatar">${chat.type === 'group' ? '👥' : '👤'}</div>
                 <div class="chat-info">
-                    <h4>${chat.name || 'Чат'}</h4>
-                    <p class="chat-preview">${lastMessage}</p>
+                    <h4>${escapeHtml(chat.name || 'Чат')}</h4>
+                    <p class="chat-preview">${escapeHtml(lastMessage)}</p>
                 </div>
                 <div class="chat-time">${lastTime}</div>
             </div>
@@ -507,6 +554,8 @@ async function startChatWithUser(userId, username) {
     if (!currentUser) return;
     
     try {
+        console.log('💬 Начало чата с пользователем:', userId);
+        
         // Проверяем существующий чат
         const { data: existingChat, error: checkError } = await supabase
             .from('chat_members')
@@ -520,8 +569,10 @@ async function startChatWithUser(userId, username) {
         if (existingChat && existingChat.length > 0) {
             // Чат уже существует
             chatId = existingChat[0].chat_id;
+            console.log('✅ Чат уже существует:', chatId);
         } else {
             // Создаем новый чат
+            console.log('🆕 Создание нового чата');
             const { data: newChat, error: chatError } = await supabase
                 .from('chats')
                 .insert({
@@ -540,6 +591,8 @@ async function startChatWithUser(userId, username) {
                 { chat_id: chatId, user_id: currentUser.id },
                 { chat_id: chatId, user_id: userId }
             ]);
+            
+            console.log('✅ Новый чат создан:', chatId);
         }
         
         // Открываем чат
@@ -549,13 +602,15 @@ async function startChatWithUser(userId, username) {
         toggleSearch(false);
         
     } catch (error) {
-        console.error('Ошибка создания чата:', error);
+        console.error('❌ Ошибка создания чата:', error);
         showError('Не удалось начать чат');
     }
 }
 
 // ===== ОТКРЫТИЕ ЧАТА =====
 async function openChat(chatId, type = 'personal', chatName = null) {
+    console.log('💬 Открытие чата:', chatId, type);
+    
     currentChat = chatId;
     
     // Обновляем заголовок
@@ -577,6 +632,8 @@ async function openChat(chatId, type = 'personal', chatName = null) {
 
 async function loadMessages(chatId, limit = 50) {
     try {
+        console.log('📨 Загрузка сообщений чата:', chatId);
+        
         const { data: messages, error } = await supabase
             .from('messages')
             .select('*')
@@ -586,10 +643,11 @@ async function loadMessages(chatId, limit = 50) {
         
         if (error) throw error;
         
+        console.log('✅ Загружено сообщений:', messages?.length);
         displayMessages(messages || []);
         
     } catch (error) {
-        console.error('Ошибка загрузки сообщений:', error);
+        console.error('❌ Ошибка загрузки сообщений:', error);
         showError('Не удалось загрузить сообщения');
     }
 }
@@ -610,13 +668,15 @@ function displayMessages(messages) {
     container.innerHTML = messages.map(msg => {
         const isSent = msg.sender_id === currentUser.id;
         const time = formatTime(msg.created_at);
+        const content = msg.is_deleted ? '[Сообщение удалено]' : msg.content;
+        const editedBadge = msg.is_edited ? ' (ред.)' : '';
         
         return `
-            <div class="message ${isSent ? 'sent' : 'received'}">
-                <div class="message-text">${escapeHtml(msg.content)}</div>
+            <div class="message ${isSent ? 'sent' : 'received'}" data-message-id="${msg.id}">
+                <div class="message-text">${escapeHtml(content)}${editedBadge}</div>
                 <div class="message-meta">
                     <span class="message-time">${time}</span>
-                    ${isSent ? `
+                    ${isSent && !msg.is_deleted ? `
                         <div class="message-actions">
                             <button class="edit-message-btn" onclick="editMessage('${msg.id}', '${escapeHtml(msg.content)}')">✏️</button>
                             <button class="delete-message-btn" onclick="deleteMessage('${msg.id}')">🗑️</button>
@@ -643,6 +703,8 @@ async function sendMessage() {
     if (!content) return;
     
     try {
+        console.log('📤 Отправка сообщения в чат:', currentChat);
+        
         // Отправляем сообщение
         const { error } = await supabase.from('messages').insert({
             chat_id: currentChat,
@@ -653,6 +715,8 @@ async function sendMessage() {
         });
         
         if (error) throw error;
+        
+        console.log('✅ Сообщение отправлено');
         
         // Обновляем последнее сообщение в чате
         await supabase.from('chats').update({
@@ -671,7 +735,7 @@ async function sendMessage() {
         await loadMessages(currentChat);
         
     } catch (error) {
-        console.error('Ошибка отправки:', error);
+        console.error('❌ Ошибка отправки:', error);
         showError('Не удалось отправить сообщение');
     }
 }
@@ -684,6 +748,8 @@ async function editMessage(messageId, oldContent) {
     }
     
     try {
+        console.log('✏️ Редактирование сообщения:', messageId);
+        
         const { error } = await supabase
             .from('messages')
             .update({
@@ -696,6 +762,8 @@ async function editMessage(messageId, oldContent) {
         
         if (error) throw error;
         
+        console.log('✅ Сообщение отредактировано');
+        
         // Перезагружаем сообщения
         if (currentChat) {
             await loadMessages(currentChat);
@@ -704,7 +772,7 @@ async function editMessage(messageId, oldContent) {
         showSuccess('Сообщение отредактировано');
         
     } catch (error) {
-        console.error('Ошибка редактирования:', error);
+        console.error('❌ Ошибка редактирования:', error);
         showError('Не удалось отредактировать');
     }
 }
@@ -713,6 +781,8 @@ async function deleteMessage(messageId) {
     if (!confirm('Удалить это сообщение?')) return;
     
     try {
+        console.log('🗑️ Удаление сообщения:', messageId);
+        
         const { error } = await supabase
             .from('messages')
             .update({
@@ -725,6 +795,8 @@ async function deleteMessage(messageId) {
         
         if (error) throw error;
         
+        console.log('✅ Сообщение удалено');
+        
         // Перезагружаем сообщения
         if (currentChat) {
             await loadMessages(currentChat);
@@ -733,7 +805,7 @@ async function deleteMessage(messageId) {
         showSuccess('Сообщение удалено');
         
     } catch (error) {
-        console.error('Ошибка удаления:', error);
+        console.error('❌ Ошибка удаления:', error);
         showError('Не удалось удалить сообщение');
     }
 }
@@ -743,7 +815,10 @@ function setupRealtime(chatId) {
     // Отписываемся от предыдущей подписки
     if (realtimeSubscription) {
         supabase.removeChannel(realtimeSubscription);
+        console.log('📡 Отписано от предыдущего канала');
     }
+    
+    console.log('📡 Подписка на realtime чата:', chatId);
     
     // Подписываемся на новые сообщения
     realtimeSubscription = supabase
@@ -757,6 +832,8 @@ function setupRealtime(chatId) {
                 filter: `chat_id=eq.${chatId}`
             },
             async (payload) => {
+                console.log('📨 Новое сообщение (realtime):', payload.new);
+                
                 // Игнорируем свои сообщения
                 if (payload.new.sender_id === currentUser.id) return;
                 
@@ -767,7 +844,25 @@ function setupRealtime(chatId) {
                 await loadChats();
             }
         )
-        .subscribe();
+        .on(
+            'postgres_changes',
+            {
+                event: 'UPDATE',
+                schema: 'public',
+                table: 'messages',
+                filter: `chat_id=eq.${chatId}`
+            },
+            async (payload) => {
+                // Обновляем отредактированное сообщение
+                if (payload.new.is_edited || payload.new.is_deleted) {
+                    console.log('✏️ Сообщение обновлено (realtime)');
+                    await loadMessages(chatId);
+                }
+            }
+        )
+        .subscribe((status) => {
+            console.log('📡 Realtime статус:', status);
+        });
 }
 
 async function addNewMessage(message) {
@@ -780,11 +875,14 @@ async function addNewMessage(message) {
     
     const isSent = message.sender_id === currentUser.id;
     const time = formatTime(message.created_at);
+    const content = message.is_deleted ? '[Сообщение удалено]' : message.content;
+    const editedBadge = message.is_edited ? ' (ред.)' : '';
     
     const messageElement = document.createElement('div');
     messageElement.className = `message ${isSent ? 'sent' : 'received'}`;
+    messageElement.dataset.messageId = message.id;
     messageElement.innerHTML = `
-        <div class="message-text">${escapeHtml(message.content)}</div>
+        <div class="message-text">${escapeHtml(content)}${editedBadge}</div>
         <div class="message-meta">
             <span class="message-time">${time}</span>
         </div>
@@ -796,6 +894,9 @@ async function addNewMessage(message) {
     setTimeout(() => {
         container.scrollTop = container.scrollHeight;
     }, 100);
+    
+    // Воспроизводим звук уведомления
+    playNotificationSound();
 }
 
 // ===== ОНЛАЙН ПОЛЬЗОВАТЕЛИ =====
@@ -835,11 +936,11 @@ function displayOnlineUsers(users) {
         const avatarText = username[0].toUpperCase();
         
         return `
-            <div class="chat-item" onclick="startChatWithUser('${user.id}', '${username}')">
+            <div class="chat-item" onclick="startChatWithUser('${user.id}', '${escapeHtml(username)}')">
                 <div class="chat-avatar online">${avatarText}</div>
                 <div class="chat-info">
-                    <h4>${username}</h4>
-                    <p class="chat-preview">${user.status || 'В сети'}</p>
+                    <h4>${escapeHtml(username)}</h4>
+                    <p class="chat-preview">${escapeHtml(user.status || 'В сети')}</p>
                 </div>
             </div>
         `;
@@ -952,6 +1053,7 @@ function isValidEmail(email) {
 }
 
 function escapeHtml(text) {
+    if (!text) return '';
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
@@ -1017,8 +1119,33 @@ function hideModal(modalName) {
     }
 }
 
+function playNotificationSound() {
+    try {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.value = 800;
+        oscillator.type = 'sine';
+        
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.2);
+        
+    } catch (error) {
+        console.log('🔇 Аудио недоступно');
+    }
+}
+
 // ===== ОБРАБОТЧИКИ СОБЫТИЙ =====
 function setupEventListeners() {
+    console.log('🔧 Настройка обработчиков событий');
+    
     // Авторизация
     if (elements.auth.sendEmailBtn) {
         elements.auth.sendEmailBtn.addEventListener('click', sendEmailOTP);
@@ -1187,6 +1314,8 @@ function setupEventListeners() {
     
     // Supabase auth изменения
     supabase.auth.onAuthStateChange((event, session) => {
+        console.log('🔐 Auth state changed:', event);
+        
         if (event === 'SIGNED_IN' && session) {
             currentUser = session.user;
             initializeUser();
@@ -1205,6 +1334,21 @@ function setupEventListeners() {
             verifyEmailOTP();
         }
     });
+    
+    // Автопереход со сплеш-скрина
+    setTimeout(() => {
+        if (elements.screens.splash && elements.screens.splash.classList.contains('active')) {
+            elements.screens.splash.classList.remove('active');
+            setTimeout(() => {
+                elements.screens.splash.style.display = 'none';
+                
+                // Если не авторизованы, показываем экран авторизации
+                if (!currentUser) {
+                    showScreen('auth');
+                }
+            }, 500);
+        }
+    }, 2500);
 }
 
 function debounce(func, wait) {
@@ -1225,4 +1369,4 @@ window.openChat = openChat;
 window.editMessage = editMessage;
 window.deleteMessage = deleteMessage;
 
-console.log('✅ Absgram готов к работе!');
+console.log('✅ Absgram готов к работе! Версия:', CONFIG.app.version);
