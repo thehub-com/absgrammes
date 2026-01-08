@@ -1,4 +1,4 @@
-// app.js - Absgram Messenger (исправленная версия)
+// app.js - Absgram Messenger (исправленная версия с маршрутизацией)
 
 // ===== КОНФИГУРАЦИЯ =====
 const CONFIG = {
@@ -9,7 +9,7 @@ const CONFIG = {
     app: {
         name: "Absgram",
         version: "1.0.0",
-        siteUrl: "https://absgram.onrender.com", // ВАЖНО: ваш URL
+        siteUrl: "https://absgram.onrender.com",
         colors: {
             primary: "#FF9800",
             primaryDark: "#F57C00",
@@ -89,6 +89,40 @@ const elements = {
     }
 };
 
+// ===== МАРШРУТИЗАЦИЯ =====
+function showScreen(screenName) {
+    console.log('🖥️ Переключение на экран:', screenName);
+    
+    // Скрыть все экраны
+    Object.values(elements.screens).forEach(screen => {
+        if (screen) {
+            screen.classList.remove('active');
+            screen.style.display = 'none';
+        }
+    });
+    
+    // Показать нужный экран
+    const screen = elements.screens[screenName];
+    if (screen) {
+        screen.style.display = 'flex';
+        setTimeout(() => {
+            screen.classList.add('active');
+        }, 10);
+    }
+    
+    // Особые действия для экранов
+    switch(screenName) {
+        case 'app':
+            if (currentUser) updateUserUI();
+            break;
+        case 'chatWindow':
+            if (currentChat) {
+                elements.chat.messageInput.focus();
+            }
+            break;
+    }
+}
+
 // ===== ИНИЦИАЛИЗАЦИЯ =====
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('🚀 Absgram инициализация...');
@@ -107,6 +141,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch (error) {
         console.error('❌ Ошибка инициализации:', error);
         showError('Ошибка загрузки приложения');
+        showScreen('auth');
     }
 });
 
@@ -122,14 +157,16 @@ async function checkAuth() {
         }
         
         if (user) {
+            console.log('✅ Пользователь авторизован:', user.email);
             currentUser = user;
             await initializeUser();
             showScreen('app');
         } else {
+            console.log('⚠️ Пользователь не авторизован');
             showScreen('auth');
         }
     } catch (error) {
-        console.error('Ошибка авторизации:', error);
+        console.error('❌ Ошибка авторизации:', error);
         showScreen('auth');
     }
 }
@@ -137,20 +174,25 @@ async function checkAuth() {
 async function initializeUser() {
     if (!currentUser) return;
     
-    // Создаем профиль если его нет
-    await createOrUpdateProfile();
+    console.log('👤 Инициализация пользователя:', currentUser.email);
     
-    // Обновляем UI
-    updateUserUI();
-    
-    // Загружаем данные
-    await Promise.all([
-        loadChats(),
-        loadOnlineUsers()
-    ]);
-    
-    // Начинаем отслеживать онлайн статус
-    startOnlineTracking();
+    try {
+        // Создаем профиль если его нет
+        await createOrUpdateProfile();
+        
+        // Обновляем UI
+        updateUserUI();
+        
+        // Загружаем данные
+        await loadChats();
+        await loadOnlineUsers();
+        
+        // Начинаем отслеживать онлайн статус
+        startOnlineTracking();
+        
+    } catch (error) {
+        console.error('❌ Ошибка инициализации пользователя:', error);
+    }
 }
 
 async function createOrUpdateProfile() {
@@ -166,7 +208,7 @@ async function createOrUpdateProfile() {
         if (error || !profile) {
             const username = currentUser.email.split('@')[0];
             
-            await supabase.from('profiles').insert({
+            const { error: insertError } = await supabase.from('profiles').insert({
                 id: currentUser.id,
                 email: currentUser.email,
                 username: username,
@@ -175,6 +217,12 @@ async function createOrUpdateProfile() {
                 last_seen: new Date().toISOString(),
                 created_at: new Date().toISOString()
             });
+            
+            if (insertError) {
+                console.error('❌ Ошибка создания профиля:', insertError);
+            } else {
+                console.log('✅ Профиль создан');
+            }
         } else {
             // Обновляем статус онлайн
             await supabase.from('profiles')
@@ -183,13 +231,15 @@ async function createOrUpdateProfile() {
                     last_seen: new Date().toISOString()
                 })
                 .eq('id', currentUser.id);
+                
+            console.log('✅ Статус онлайн обновлен');
         }
     } catch (error) {
-        console.error('Ошибка профиля:', error);
+        console.error('❌ Ошибка профиля:', error);
     }
 }
 
-// ===== EMAIL OTP (ИСПРАВЛЕННЫЙ) =====
+// ===== EMAIL OTP =====
 async function sendEmailOTP() {
     const email = elements.auth.emailInput.value.trim();
     
@@ -203,23 +253,23 @@ async function sendEmailOTP() {
         elements.auth.sendEmailBtn.disabled = true;
         elements.auth.sendEmailBtn.textContent = 'Отправка...';
         
+        console.log('📧 Отправка OTP на:', email);
+        
         // Сохраняем email
         pendingEmail = email;
         localStorage.setItem('pendingEmail', email);
         
-        console.log('📧 Отправка OTP на:', email);
-        
-        // ВАЖНО: Используем правильный redirect URL для Render
+        // Отправляем OTP
         const { error } = await supabase.auth.signInWithOtp({
             email: email,
             options: {
                 shouldCreateUser: true,
-                emailRedirectTo: CONFIG.app.siteUrl // Используем URL из конфига
+                emailRedirectTo: CONFIG.app.siteUrl
             }
         });
         
         if (error) {
-            console.error('OTP Error Details:', error);
+            console.error('❌ OTP Error Details:', error);
             throw error;
         }
         
@@ -229,11 +279,12 @@ async function sendEmailOTP() {
         elements.auth.otpGroup.classList.remove('hidden');
         elements.auth.otpInput.focus();
         
-        showSuccess('✅ 6-значный код отправлен на email! Проверьте папку "Спам" если не видите письмо.');
+        // Уведомление пользователю
+        alert('✅ 6-значный код отправлен на email! Проверьте папку "Спам" если не видите письмо.');
         
     } catch (error) {
         console.error('❌ Ошибка OTP:', error);
-        showError(`Ошибка отправки: ${error.message}. Проверьте настройки Supabase.`);
+        showError(`Ошибка отправки: ${error.message}`);
     } finally {
         // Восстанавливаем кнопку
         elements.auth.sendEmailBtn.disabled = false;
@@ -263,7 +314,7 @@ async function verifyEmailOTP() {
         });
         
         if (error) {
-            console.error('Verify OTP Error:', error);
+            console.error('❌ Verify OTP Error:', error);
             throw error;
         }
         
@@ -272,13 +323,16 @@ async function verifyEmailOTP() {
         // Успешная авторизация
         currentUser = data.user;
         await initializeUser();
+        
+        // Переключаем экран
         showScreen('app');
         
         // Очищаем
         localStorage.removeItem('pendingEmail');
         pendingEmail = null;
         
-        showSuccess('✅ Авторизация успешна!');
+        // Уведомление
+        alert('✅ Авторизация успешна! Добро пожаловать в Absgram!');
         
     } catch (error) {
         console.error('❌ Ошибка верификации:', error);
@@ -301,7 +355,7 @@ async function signInWithGoogle() {
         });
         
         if (error) {
-            console.error('Google OAuth error:', error);
+            console.error('❌ Google OAuth error:', error);
             throw error;
         }
         
@@ -309,7 +363,7 @@ async function signInWithGoogle() {
         
     } catch (error) {
         console.error('❌ Google OAuth error:', error);
-        showError('Ошибка входа через Google: ' + error.message);
+        showError('Ошибка входа через Google');
     }
 }
 
@@ -342,30 +396,11 @@ async function signOut() {
         showScreen('auth');
         
     } catch (error) {
-        console.error('Ошибка выхода:', error);
+        console.error('❌ Ошибка выхода:', error);
     }
 }
 
-// ===== УПРАВЛЕНИЕ ЭКРАНАМИ =====
-function showScreen(screenName) {
-    console.log('🖥️ Переключение экрана:', screenName);
-    
-    // Скрыть все экраны
-    Object.values(elements.screens).forEach(screen => {
-        if (screen) {
-            screen.classList.remove('active');
-            screen.style.display = 'none';
-        }
-    });
-    
-    // Показать нужный экран
-    const screen = elements.screens[screenName];
-    if (screen) {
-        screen.style.display = 'flex';
-        setTimeout(() => screen.classList.add('active'), 10);
-    }
-}
-
+// ===== ОБНОВЛЕНИЕ UI =====
 function updateUserUI() {
     if (!currentUser) return;
     
@@ -407,7 +442,7 @@ async function loadUserProfile() {
             elements.app.userStatus.textContent = profile.status;
         }
     } catch (error) {
-        console.error('Ошибка загрузки профиля:', error);
+        console.error('❌ Ошибка загрузки профиля:', error);
     }
 }
 
@@ -617,6 +652,9 @@ async function openChat(chatId, type = 'personal', chatName = null) {
     if (chatName) {
         elements.chat.chatName.textContent = chatName;
         elements.chat.chatAvatar.textContent = chatName[0].toUpperCase();
+    } else {
+        elements.chat.chatName.textContent = 'Чат';
+        elements.chat.chatAvatar.textContent = 'U';
     }
     
     // Загружаем сообщения
@@ -769,11 +807,11 @@ async function editMessage(messageId, oldContent) {
             await loadMessages(currentChat);
         }
         
-        showSuccess('Сообщение отредактировано');
+        alert('Сообщение отредактировано');
         
     } catch (error) {
         console.error('❌ Ошибка редактирования:', error);
-        showError('Не удалось отредактировать');
+        alert('Не удалось отредактировать');
     }
 }
 
@@ -802,11 +840,11 @@ async function deleteMessage(messageId) {
             await loadMessages(currentChat);
         }
         
-        showSuccess('Сообщение удалено');
+        alert('Сообщение удалено');
         
     } catch (error) {
         console.error('❌ Ошибка удаления:', error);
-        showError('Не удалось удалить сообщение');
+        alert('Не удалось удалить сообщение');
     }
 }
 
@@ -894,9 +932,6 @@ async function addNewMessage(message) {
     setTimeout(() => {
         container.scrollTop = container.scrollHeight;
     }, 100);
-    
-    // Воспроизводим звук уведомления
-    playNotificationSound();
 }
 
 // ===== ОНЛАЙН ПОЛЬЗОВАТЕЛИ =====
@@ -914,7 +949,7 @@ async function loadOnlineUsers() {
         displayOnlineUsers(users || []);
         
     } catch (error) {
-        console.error('Ошибка загрузки онлайн:', error);
+        console.error('❌ Ошибка загрузки онлайн:', error);
     }
 }
 
@@ -1021,7 +1056,7 @@ async function saveProfile() {
     
     const check = await checkUsernameAvailability(username);
     if (!check.available) {
-        showError(check.message);
+        alert(check.message);
         return;
     }
     
@@ -1038,11 +1073,11 @@ async function saveProfile() {
         // Обновляем UI
         updateUserUI();
         
-        showSuccess('Профиль обновлен');
+        alert('Профиль обновлен');
         
     } catch (error) {
-        console.error('Ошибка сохранения:', error);
-        showError('Не удалось сохранить профиль');
+        console.error('❌ Ошибка сохранения:', error);
+        alert('Не удалось сохранить профиль');
     }
 }
 
@@ -1091,11 +1126,6 @@ function showError(message) {
     alert(message);
 }
 
-function showSuccess(message) {
-    console.log('✅', message);
-    alert(message);
-}
-
 function updateSendButton() {
     const input = elements.chat.messageInput;
     const btn = elements.chat.sendBtn;
@@ -1116,29 +1146,6 @@ function hideModal(modalName) {
     const modal = elements.modals[modalName];
     if (modal) {
         modal.classList.add('hidden');
-    }
-}
-
-function playNotificationSound() {
-    try {
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-        
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        
-        oscillator.frequency.value = 800;
-        oscillator.type = 'sine';
-        
-        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
-        
-        oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + 0.2);
-        
-    } catch (error) {
-        console.log('🔇 Аудио недоступно');
     }
 }
 
@@ -1163,6 +1170,15 @@ function setupEventListeners() {
         elements.auth.otpInput.addEventListener('input', (e) => {
             if (e.target.value.length === 6) {
                 verifyEmailOTP();
+            }
+        });
+    }
+    
+    // Enter в email поле
+    if (elements.auth.emailInput) {
+        elements.auth.emailInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendEmailOTP();
             }
         });
     }
@@ -1258,7 +1274,7 @@ function setupEventListeners() {
             const groupName = elements.modals.groupNameInput.value.trim();
             
             if (!groupName) {
-                showError('Введите название группы');
+                alert('Введите название группы');
                 return;
             }
             
@@ -1286,11 +1302,11 @@ function setupEventListeners() {
                 
                 openChat(group.id, 'group', groupName);
                 
-                showSuccess(`Группа "${groupName}" создана!`);
+                alert(`Группа "${groupName}" создана!`);
                 
             } catch (error) {
-                console.error('Ошибка создания группы:', error);
-                showError('Не удалось создать группу');
+                console.error('❌ Ошибка создания группы:', error);
+                alert('Не удалось создать группу');
             }
         });
     }
@@ -1307,8 +1323,6 @@ function setupEventListeners() {
         btn.addEventListener('click', () => {
             elements.app.bottomNavBtns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            
-            // Здесь можно добавить переключение контента
         });
     });
     
@@ -1334,21 +1348,6 @@ function setupEventListeners() {
             verifyEmailOTP();
         }
     });
-    
-    // Автопереход со сплеш-скрина
-    setTimeout(() => {
-        if (elements.screens.splash && elements.screens.splash.classList.contains('active')) {
-            elements.screens.splash.classList.remove('active');
-            setTimeout(() => {
-                elements.screens.splash.style.display = 'none';
-                
-                // Если не авторизованы, показываем экран авторизации
-                if (!currentUser) {
-                    showScreen('auth');
-                }
-            }, 500);
-        }
-    }, 2500);
 }
 
 function debounce(func, wait) {
@@ -1368,5 +1367,6 @@ window.startChatWithUser = startChatWithUser;
 window.openChat = openChat;
 window.editMessage = editMessage;
 window.deleteMessage = deleteMessage;
+window.showScreen = showScreen; // Экспортируем функцию маршрутизации
 
 console.log('✅ Absgram готов к работе! Версия:', CONFIG.app.version);
